@@ -17,6 +17,7 @@ sampleUI:newUI( { theme="darkgrey", title="MediaBrix", showBuildNum=true } )
 ------------------------------
 display.getCurrentStage():insert( sampleUI.backGroup )
 local mainGroup = display.newGroup()
+local placementGroup = display.newGroup() ; mainGroup:insert( placementGroup )
 display.getCurrentStage():insert( sampleUI.frontGroup )
 
 ----------------------
@@ -95,7 +96,7 @@ local function checkSetup()
 	if ( system.getInfo( "environment" ) ~= "device" ) then return end
 
 	if ( tostring(appID) == "[YOUR-APP-ID]" ) then
-		local alert = native.showAlert( "Important", 'Confirm that you have specified your unique MediaBrix app ID within "main.lua" on line 35. This will be sent to you following completion of the MediaBrix registration process.', { "OK", "mediabrix.com" },
+		local alert = native.showAlert( "Important", 'Confirm that you have specified your unique MediaBrix app ID within "main.lua" on line 36. This will be sent to you following completion of the MediaBrix registration process.', { "OK", "mediabrix.com" },
 			function( event )
 				if ( event.action == "clicked" and event.index == 2 ) then
 					system.openURL( "http://platform.mediabrix.com/" )
@@ -120,7 +121,8 @@ local function updateUI( params )
 
 	-- Move/transition prompt
 	if ( params["promptTo"] ) then
-		transition.to( prompt, { y=params["promptTo"].y, alpha=1, time=400, transition=easing.outQuad } )
+		transition.to( prompt, { y=params["promptTo"].y, alpha=1, tag="prompt", time=400, transition=easing.outQuad } )
+		prompt.isOn = params["promptTo"]
 	end
 
 	-- Enable new active buttons
@@ -192,8 +194,7 @@ end
 -- Create placement ID switches/labels
 if ( testPlacements ~= nil ) then
 
-	local placementLabel = display.newText( mainGroup, "Select Placement ID", display.contentCenterX, 84, appFont, 20 )
-	local placementGroup = display.newGroup() ; mainGroup:insert( placementGroup )
+	local placementLabel = display.newText( placementGroup, "Select Placement ID", display.contentCenterX, 104, appFont, 20 )
 
 	for i = 1,#testPlacements do
 		local isOn = false ; if ( i == 1 ) then isOn = true; currentPlacement = 1 end
@@ -204,15 +205,15 @@ if ( testPlacements ~= nil ) then
 				height = 35,
 				frameOn = 1,
 				frameOff = 2,
-				x = 97,
-				y = (placementLabel.contentBounds.yMax-10)+(i*42),
+				x = display.contentCenterX - 70,
+				y = (placementLabel.contentBounds.yMax-10)+(i*36),
 				style = "radio",
 				id = i,
 				initialSwitchState = isOn,
 				onPress = function( event ) currentPlacement = i; end
 			})
 		placementGroup:insert( radioButton )
-		local label = display.newText( mainGroup, testPlacements[i], radioButton.contentBounds.xMax+4, radioButton.y, appFont, 16 )
+		local label = display.newText( placementGroup, testPlacements[i], radioButton.contentBounds.xMax+4, radioButton.y, appFont, 16 )
 		label.anchorX = 0
 	end
 end
@@ -236,6 +237,7 @@ loadButton = widget.newButton(
 loadButton:setEnabled( false )
 loadButton.alpha = 0.3
 mainGroup:insert( loadButton )
+prompt.isOn = loadButton
 
 showButton = widget.newButton(
 	{
@@ -256,6 +258,26 @@ showButton:setEnabled( false )
 showButton.alpha = 0.3
 mainGroup:insert( showButton )
 
+-- Update the app layout on resize event
+local function onResize( event )
+
+	loadButton.x = display.contentCenterX + 10
+	showButton.x = display.contentCenterX + 10
+	transition.cancel( "prompt" )
+
+	if ( system.orientation == "landscapeLeft" or system.orientation == "landscapeRight" ) then
+		loadButton.y, showButton.y = 225, 275
+		placementGroup.x, placementGroup.y = 80, -40
+		prompt.x, prompt.y = 142, prompt.isOn.y
+		spinner.x, spinner.y = 400, 250
+	elseif ( system.orientation == "portrait" or system.orientation == "portraitUpsideDown" ) then
+		loadButton.y, showButton.y = 285, 335
+		placementGroup.x, placementGroup.y = 0, 0
+		prompt.x, prompt.y = 62, prompt.isOn.y
+		spinner.x, spinner.y = display.contentCenterX, 410
+	end
+end
+Runtime:addEventListener( "resize", onResize )
 
 -- Initially alert user to set up device for testing
 checkSetup()
