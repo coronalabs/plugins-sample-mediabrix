@@ -173,7 +173,7 @@ local function adListener( event )
 
 	-- The user viewed a rewarded/incentivized ad
 	elseif ( event.phase == "reward" ) then
-		print( "MediaBrix event: " .. tostring(event.type) .. " rewarded ad viewed and reward accepted" )
+		print( "MediaBrix event: " .. tostring(event.type) .. " ad viewed and reward accepted" )
 		updateUI( { disable={ showButton } } )
 	end
 end
